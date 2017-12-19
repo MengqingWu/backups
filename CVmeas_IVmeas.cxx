@@ -20,10 +20,12 @@
 
 void IVmeas(  std::string SensorNum="",
 	      std::string Meas_version="1",
+	      std::string extraPattern="",
 	      TString outdir = "outData",
 	      bool printalot = false) {
 
   std::string dataDir  = ( SensorNum=="" ? "./test/" : "./inData/");
+  if ( extraPattern!="") SensorNum=extraPattern+'_'+SensorNum;
   std::string datafile = ( SensorNum=="" ? "dma_0802_SID_IV" : "Sensor_"+SensorNum+"_IV_"+Meas_version);
   dataDir+=datafile;
   
@@ -31,7 +33,10 @@ void IVmeas(  std::string SensorNum="",
   //in.open(Form("dma_0802_SID_CV"));
   std::cout<< "I am working on: "<<dataDir+datafile<<std::endl;
   instream.open(dataDir.c_str(), std::ifstream::in);
-  
+  if (instream.fail()){
+    perror("\t Exiting: input file not exist! ");
+    return;
+  }
   // ifstream in;
   //in.open(Form("dma_0802_SID_IV"));
   //  in.open(Form("../20July2015/ivdorA1"));
@@ -101,14 +106,13 @@ void IVmeas(  std::string SensorNum="",
     volt_arrE[i] = 0.;
     curr_arrE[i] = 0.;
     guardcurr_arrE[i] =0.;
-
-
     //    std::cout<<" v " << volt_arr[i]<< " cap "<<cap_arr[i]<< " 1/c2 "<<OneOverC2[i]<<std::endl;
   }
 
 
   TCanvas *c1=new TCanvas("N1");
   
+  /* --- not used:
   TGraphErrors *alpha = new TGraphErrors(nlines, volt_arr, curr_arr, volt_arrE, curr_arrE);
   alpha->SetTitle("");
   alpha->GetXaxis()->SetTitle("V [V]");
@@ -122,7 +126,7 @@ void IVmeas(  std::string SensorNum="",
   alpha->Draw("aepsame");
   
   c1->Print(outdir+"/"+datafile+"_i_vs_v.png");
-  
+  */
   
   TCanvas *c2=new TCanvas("N2");
   
@@ -144,7 +148,7 @@ void IVmeas(  std::string SensorNum="",
   TFile *outf= new TFile(outdir+"/"+datafile+"_PlotsIV.root","RECREATE");
 
   beta -> Write( (datafile+"_Iguard_V").c_str() );
-  c1 -> Write( (datafile+"_I_V_can").c_str() );
+  //c1 -> Write( (datafile+"_I_V_can").c_str() );
   c2 -> Write( (datafile+"_Iguard_V_can").c_str() );
   outf -> Write();
   outf -> Close();
@@ -157,10 +161,12 @@ void IVmeas(  std::string SensorNum="",
 
 void CVmeas(std::string SensorNum = "",
 	    std::string Meas_version="1",
+	    std::string extraPattern="",
 	    TString outdir="outData",
 	    bool printalot = false) {
   
   std::string dataDir  = ( SensorNum=="" ? "./test/" : "./inData/");
+  if ( extraPattern!="") SensorNum=extraPattern+'_'+SensorNum;
   std::string datafile = ( SensorNum=="" ? "dma_0802_SID_CV" : "Sensor_"+SensorNum+"_CV_"+Meas_version);
   
   std::ifstream instream;
@@ -168,7 +174,10 @@ void CVmeas(std::string SensorNum = "",
   dataDir+=datafile;
   std::cout<< "I am working on: "<<dataDir<<std::endl;
   instream.open(dataDir.c_str(), std::ifstream::in);
-  
+  if (instream.fail()){
+    perror("\t Exiting: input file not exist! ");
+    return;
+  }
   //  in.open(Form("../20July2015_2/cvdorA1"));
   //  in.open(Form("../20July2015/cvdorB1"));
   //  in.open(Form("cvd1"));
@@ -317,7 +326,7 @@ void CVmeas(std::string SensorNum = "",
 
   alpha -> Write ( (datafile+"_C_V").c_str() );
   beta ->  Write ( (datafile+"_1OverC2_V").c_str() );
-  gamma -> Write ( (datafile+"").c_str() );
+  gamma -> Write ( (datafile+"G_V_can").c_str() );
   c1 -> Write ( (datafile+"_C_V_can").c_str() );
   c2 -> Write ( (datafile+"_1OverC2_V_can").c_str() );
   c3 -> Write ( (datafile+"_G_V_can").c_str() );
@@ -336,23 +345,32 @@ void CVmeas(std::string SensorNum = "",
 int main(int argc, char* argv[]){
 
   /* temperarily, concentrated on measurement version 1*/
-  std::cout<<"[Main:Info] Start CV plotting ... "
+  std::cout<<"[Main:Info] Start IV & CV plotting ... "
 	   <<""
 	   <<std::endl;
 
   bool printalot = false;
   std::string meas_version = "1";
-  int iarg = 1;
+  std::string extra_patn = "";
   
   if (argc<2) {
-    throw std::range_error("[Usage]:\n\t ./cviv.exe 31 32 34 46 (sensor numbers provided)\n\t ./cviv.exe v2 33 42 (v2 stands for the version of 'inData/Sensor_xx_xV_2')\n");
+    throw std::range_error("\n[Usage]:\n\t ./cviv.exe [PATN=$pattern] [version] $sensor_num \n\t -- [PATN] extra pattern in name 'Sensor_[PATN_]$SensorNum_v$version' \n\t -- [version] is optional: v2, v3 or default is v1 \n[Example]:\n\t ./cviv.exe 31 32 34 46 (sensor numbers provided)\n\t ./cviv.exe v2 33 42 (v2 stands for the version of 'inData/Sensor_xx_xV_2')\n");
   }
 
+  /* Check which arg starting to be sensor_num: */
+  int iarg = 1;
   /* check the version from the first parameter */
-  if ( argv[1][0]=='v' ){
-    meas_version=argv[1];
+  if ( argv[1][0]=='P' && argv[1][1]=='A' && argv[1][2]=='T' && argv[1][3]=='N'){
+    extra_patn = argv[1];
+    extra_patn.erase(0,5);
+    iarg++;
+    if (printalot) std::cout<< extra_patn<<"\n";
+  }
+    
+  if ( argv[iarg][0]=='v' ){
+    meas_version=argv[iarg];
     meas_version.erase(0,1);
-    iarg=2; // sensor number starting from second parameter then
+    iarg++; // sensor number starting from second parameter then
     if (printalot)
       std::cout<< "[Main:Info] You are checking measure version == " << meas_version <<std::endl;
   }
@@ -367,8 +385,8 @@ int main(int argc, char* argv[]){
     }
     std::cout << "check: " << iarg <<", "
 	      << argv[iarg] << std::endl;  
-    CVmeas(std::string(argv[iarg]), meas_version);
-    IVmeas(std::string(argv[iarg]), meas_version);
+    CVmeas(std::string(argv[iarg]), meas_version, extra_patn);
+    IVmeas(std::string(argv[iarg]), meas_version, extra_patn);
     iarg++;
   } 
   

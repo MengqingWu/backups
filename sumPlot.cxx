@@ -33,11 +33,8 @@ void sumPlot(int n2plot=10,
   
   for (int isid=0; isid<n2plot; isid++){
     int sid_num = 31+isid;
-
  
     string isid_name = "Sensor_"+to_string(sid_num)+"_CV_"+ to_string(version) +"_1OverC2_V";
-
-    
     
     gra_arr[isid]=(TGraphErrors*)dataf->Get(isid_name.c_str());
     gra_arr[isid]->SetMarkerColor(kOrange+isid);
