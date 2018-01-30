@@ -5,10 +5,10 @@
 ## $ for file in /afs/desy.de/group/flc/pool/tpc/share/External_Tracker/ProbeStation/24Aug2017/Sensor*; do ln -s $file .; done
 
 ## code to compile via:
-g++ -o cviv.exe CVmeas_IVmeas.cxx -I${ROOTSYS}/include -L${ROOTSYS}/lib -std=gnu++11 $(bash root-config --cflags) $(bash root-config --libs)
+g++ -o cviv.exe src/CVmeas_IVmeas.cxx -I${ROOTSYS}/include -L${ROOTSYS}/lib -std=gnu++11 $(bash root-config --cflags) $(bash root-config --libs)
 
 #g++ -o sumPlot.exe sumPlot.cxx -I${ROOTSYS}/include -L${ROOTSYS}/lib -std=gnu++11 $(bash root-config --cflags) $(bash root-config --libs)
-g++ -o compare.exe compare.cxx -I${ROOTSYS}/include -L${ROOTSYS}/lib -std=gnu++11 $(bash root-config --cflags) $(bash root-config --libs)
+g++ -o compare.exe src/compare.cxx -I${ROOTSYS}/include -L${ROOTSYS}/lib -std=gnu++11 $(bash root-config --cflags) $(bash root-config --libs)
 
 ## before you run:
 ## $ mkdir outData

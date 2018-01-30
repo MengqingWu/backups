@@ -36,12 +36,13 @@ void compare(vector<string> candidates ,
   //int revised_sensors=[31, 32, 33, 42, 43, 58]; // version=2 for them
   
   /*START: Legend definition*/
-  TLegend *leg = new TLegend(0.65,0.25,0.85, 0.55);
+  TLegend *leg = new TLegend(0.55,0.30,0.85, 0.55);// was: 0.65,0.25,0.85,0.55 (change for tri-plot)
   leg->SetTextSize(0.04); 
   leg->SetTextFont(42); 
   leg->SetTextColor(1);
   leg->SetBorderSize(0);  //no border for legend 
   leg->SetFillColor(0);  // white
+  leg->SetFillStyle(0); // transparent
   /*END: Legend definition*/
   
   TFile* dataf=TFile::Open("outData/merge_IV_CV.root");
@@ -97,6 +98,7 @@ void compare(vector<string> candidates ,
   
   //--> to plot:
   TCanvas can;
+  can.SetLogy(); 
   puts("\n\tdebug 11\n");
   graph_arr[maxY_key]->Draw("ape");
   graph_arr[maxY_key]->GetYaxis()->SetRangeUser(minY, maxY);
