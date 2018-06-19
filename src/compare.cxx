@@ -9,6 +9,11 @@
 #include <regex>
 using namespace std;
 
+/*
+ * Created by Mengqing <mengqing.wu@desy.de> in Summer 2017
+ * Updated @Jun2019: iterated by $Outname, either 'outData/merge_IV_CV.root' for sensor data, or 'outData/mergeTS_IV_CV.root' for TestStructures;
+ */
+
 /*declare the functions for main() first*/
 void compare(vector<string>, string, bool);
 
@@ -32,9 +37,19 @@ void compare(vector<string> candidates ,
 	     string outname,
 	     bool printalot = true){
   // <n2plot>: sensors to plot from 31 to 31+n2plot-1;
-
   //int revised_sensors=[31, 32, 33, 42, 43, 58]; // version=2 for them
-  
+
+  //-- Prepare to deal with Sensor or TS:
+  string datatype, dataDir;
+  if (outname.substr(0,4)=="Test"){
+    datatype = "TestStructure";
+    dataDir = "outData/mergeTS_IV_CV.root";
+  }
+  else{
+    datatype = "Sensor";
+    dataDir = "outData/merge_IV_CV.root";
+  }
+    
   /*START: Legend definition*/
   TLegend *leg = new TLegend(0.55,0.30,0.85, 0.55);// was: 0.65,0.25,0.85,0.55 (change for tri-plot)
   leg->SetTextSize(0.04); 
@@ -44,8 +59,9 @@ void compare(vector<string> candidates ,
   leg->SetFillColor(0);  // white
   leg->SetFillStyle(0); // transparent
   /*END: Legend definition*/
+
+  TFile* dataf = TFile::Open(dataDir.c_str());
   
-  TFile* dataf=TFile::Open("outData/merge_IV_CV.root");
   TGraphErrors* graph_arr[candidates.size()];
 
   Double_t  maxY = 0., minY = 0.;
@@ -58,7 +74,7 @@ void compare(vector<string> candidates ,
     regex exCV("CV");
     auto var = candidates[icand];
     
-    string histo_name = "Sensor_"+ var ;
+    string histo_name = datatype+"_"+ var ;
     if (regex_search(var, exIV)) histo_name+="_Iguard_V";
     else if (regex_search(var, exCV)) histo_name+="_1OverC2_V";
     else {
@@ -98,7 +114,7 @@ void compare(vector<string> candidates ,
   
   //--> to plot:
   TCanvas can;
-  can.SetLogy(); 
+  //can.SetLogy(); 
   puts("\n\tdebug 11\n");
   graph_arr[maxY_key]->Draw("ape");
   graph_arr[maxY_key]->GetYaxis()->SetRangeUser(minY, maxY);
@@ -115,6 +131,7 @@ void compare(vector<string> candidates ,
   
   leg->Draw("same");
   outname="outData/"+outname+".png";
+  gPad->RedrawAxis();
   can.SaveAs(outname.c_str());
 
   //-> clean pointers:
