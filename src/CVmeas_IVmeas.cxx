@@ -12,36 +12,76 @@
 
 /* Originally from Dimitra Tsionou
  * Modified by Mengqing <mengqing.wu@desy.de> @2017 Aug
+ * Newly updated @2018 Jun: test structure added
  *
- * FUNC:  plot CV curves measured from DESY probe station
+ * FUNC:    
+ *   plot CV curves measured from DESY probe station
+ *   -- NOTE: 1 class definition can only handle one input directory with either 'Sensor_xxx' or 'TestStructure_xxx'!
+ *
+ * INPUTs:
+ *   1) Type:          either "Sensor" or "TestStructure"
+ *   1) SensorNum:     sensor numbers, like 34, 45...
+ *   2) Meas_version:  default is 1, as probe station output we always have input file named with a version, like "Sensor_BumpBonded_34_CV_1" is version 1;
+ *   3) extraPattern:  default is bare sensor, no extra Patter in probe station output file name, otherwise, add "BumpBonded" for "Sensor_BumpBonded_34_CV_1".
  *
  */
 
+//----------DOC-MARK-----BEG*CLASS-----DOC-MARK----------
+class cviv {
+  
+public:
+  cviv(std::string indir, std::string type,  bool debug);
+  ~cviv(){};
+  void IVmeas(std::string SensorNum,
+	      std::string Meas_version,
+	      std::string extraPattern);
+  
+  void CVmeas(std::string SensorNum,
+	      std::string Meas_version,
+	      std::string extraPattern); 
+    
+private:
+  std::string m_dataDir;
+  std::string m_dataType;
+  TString m_outDir;
+  bool printalot;
+};
 
-void IVmeas(  std::string SensorNum="",
-	      std::string Meas_version="1",
-	      std::string extraPattern="",
-	      TString outdir = "outData",
-	      bool printalot = false) {
+cviv::cviv(std::string indir="", std::string type="",  bool debug=false){
+  printalot = debug;
 
-  std::string dataDir  = ( SensorNum=="" ? "./test/" : "./inData/");
-  if ( extraPattern!="") SensorNum=extraPattern+'_'+SensorNum;
-  std::string datafile = ( SensorNum=="" ? "dma_0802_SID_IV" : "Sensor_"+SensorNum+"_IV_"+Meas_version);
+  m_dataDir = ( indir=="" ? "./inData/" : indir ); // or "./inData_TS"
+  m_dataType = ( type=="" ? "Sensor" : type ); // or "TestStructure"
+
+  m_outDir = "./outData/";
+  
+}
+
+void cviv::IVmeas(  std::string SensorNum="",
+		    std::string Meas_version="1",
+		    std::string extraPattern="") {
+
+  std::string datafile, dataDir;
+  if (SensorNum=="") {// test
+    dataDir = "./test/";
+    datafile = "dma_0802_SID_IV" ;
+  }
+  else{
+    dataDir = m_dataDir;
+    if ( extraPattern!="" ) SensorNum=extraPattern+'_'+SensorNum;
+    datafile = m_dataType+"_"+SensorNum+"_IV_"+Meas_version;
+  }
+
   dataDir+=datafile;
+  std::cout<< "[IVmeas:Info] Work on: "<< dataDir<<std::endl;
   
   std::ifstream instream;
-  //in.open(Form("dma_0802_SID_CV"));
-  std::cout<< "I am working on: "<<dataDir+datafile<<std::endl;
   instream.open(dataDir.c_str(), std::ifstream::in);
   if (instream.fail()){
     perror("\t Exiting: input file not exist! ");
     return;
   }
-  // ifstream in;
-  //in.open(Form("dma_0802_SID_IV"));
-  //  in.open(Form("../20July2015/ivdorA1"));
-  //  in.open(Form("cvd1"));
-  //  in.open(Form("test1"));
+  
   double x,y,z,a;
 
   const int max_num_of_char_in_a_line = 100; 
@@ -143,9 +183,9 @@ void IVmeas(  std::string SensorNum="",
   beta->SetFillStyle(3017);
   beta->Draw("aepsame");
   
-  c2->Print(outdir+"/"+datafile+"_Iguard_vs_v.png");
+  c2->Print(m_outDir+"/"+datafile+"_Iguard_vs_v.png");
 
-  TFile *outf= new TFile(outdir+"/"+datafile+"_PlotsIV.root","RECREATE");
+  TFile *outf= new TFile(m_outDir+"/"+datafile+"_PlotsIV.root","RECREATE");
 
   beta -> Write( (datafile+"_Iguard_V").c_str() );
   //c1 -> Write( (datafile+"_I_V_can").c_str() );
@@ -159,29 +199,31 @@ void IVmeas(  std::string SensorNum="",
 }
 
 
-void CVmeas(std::string SensorNum = "",
-	    std::string Meas_version="1",
-	    std::string extraPattern="",
-	    TString outdir="outData",
-	    bool printalot = false) {
+void cviv::CVmeas(std::string SensorNum = "",
+		  std::string Meas_version="1",
+		  std::string extraPattern="") {
+
+  std::string datafile, dataDir;
+  if (SensorNum=="") {// test
+    dataDir = "./test/";
+    datafile = "dma_0802_SID_CV" ;
+  }
+  else{
+    dataDir = m_dataDir;
+    if ( extraPattern!="" ) SensorNum=extraPattern+'_'+SensorNum;
+    datafile = m_dataType+"_"+SensorNum+"_CV_"+Meas_version;
+  }
   
-  std::string dataDir  = ( SensorNum=="" ? "./test/" : "./inData/");
-  if ( extraPattern!="") SensorNum=extraPattern+'_'+SensorNum;
-  std::string datafile = ( SensorNum=="" ? "dma_0802_SID_CV" : "Sensor_"+SensorNum+"_CV_"+Meas_version);
-  
-  std::ifstream instream;
-  //in.open(Form("dma_0802_SID_CV"));
   dataDir+=datafile;
-  std::cout<< "I am working on: "<<dataDir<<std::endl;
+  std::cout<< "[CVmeas:Info] Work on: "<<dataDir<<std::endl;
+ 
+  std::ifstream instream;
   instream.open(dataDir.c_str(), std::ifstream::in);
   if (instream.fail()){
     perror("\t Exiting: input file not exist! ");
     return;
   }
-  //  in.open(Form("../20July2015_2/cvdorA1"));
-  //  in.open(Form("../20July2015/cvdorB1"));
-  //  in.open(Form("cvd1"));
-  //  in.open(Form("test1"));
+  
   double x,y,z,a;
   
   const int max_num_of_char_in_a_line = 100; 
@@ -249,7 +291,6 @@ void CVmeas(std::string SensorNum = "",
     OneOverC2_E[i] = 0.;
     conductance_arrE[i] =0.;
 
-
     std::cout<<" v " << volt_arr[i]<< " cap "<<cap_arr[i]<< " 1/c2 "<<OneOverC2[i]<< std::endl;
     
   }
@@ -281,7 +322,7 @@ void CVmeas(std::string SensorNum = "",
   l->AddEntry(alpha,"Silc8","lep");  
   l->Draw();
 
-  c1->Print(outdir+"/"+datafile+"_c_vs_v.png");
+  c1->Print(m_outDir+"/"+datafile+"_c_vs_v.png");
   
   
   TCanvas *c2=new TCanvas("N2");
@@ -298,7 +339,7 @@ void CVmeas(std::string SensorNum = "",
   beta->SetFillStyle(3017);
   beta->Draw("aepsame");
   
-  c2->Print(outdir+"/"+datafile+"_1OverC2_vs_v.png");
+  c2->Print(m_outDir+"/"+datafile+"_1OverC2_vs_v.png");
   
   TCanvas *c3=new TCanvas("N3");
   /*
@@ -320,9 +361,9 @@ void CVmeas(std::string SensorNum = "",
   gamma->SetFillStyle(3017);
   gamma->Draw("aepsame");
   
-  c3->Print(outdir+"/"+datafile+"_G_vs_v.png");
+  c3->Print(m_outDir+"/"+datafile+"_G_vs_v.png");
 
-  TFile *outf= new TFile(outdir+"/"+datafile+"_PlotsCV.root","RECREATE");
+  TFile *outf= new TFile(m_outDir+"/"+datafile+"_PlotsCV.root","RECREATE");
 
   alpha -> Write ( (datafile+"_C_V").c_str() );
   beta ->  Write ( (datafile+"_1OverC2_V").c_str() );
@@ -340,7 +381,9 @@ void CVmeas(std::string SensorNum = "",
   delete outf;
 
 }
+//----------DOC-MARK-----END*CLASS-----DOC-MARK----------
 
+//----------DOC-MARK-----BEG*MAIN-----DOC-MARK----------
 
 int main(int argc, char* argv[]){
 
@@ -349,45 +392,78 @@ int main(int argc, char* argv[]){
 	   <<""
 	   <<std::endl;
 
-  bool printalot = false;
+  bool printalot = true;
   std::string meas_version = "1";
   std::string extra_patn = "";
-  
+  std::string data_type = "sensor";
+  std::string cviv_indir="", cviv_type="";
+  std::vector<std::string> Snum_vec;
+    
   if (argc<2) {
-    throw std::range_error("\n[Usage]:\n\t ./cviv.exe [PATN=$pattern] [version] $sensor_num \n\t -- [PATN] extra pattern in name 'Sensor_[PATN_]$SensorNum_v$version' \n\t -- [version] is optional: v2, v3 or default is v1 \n[Example]:\n\t ./cviv.exe 31 32 34 46 (sensor numbers provided)\n\t ./cviv.exe v2 33 42 (v2 stands for the version of 'inData/Sensor_xx_xV_2')\n");
+    throw std::range_error("\n[Usage]:\n\t ./cviv.exe [TYPE=$type] [PATN=$pattern] [version] $sensor_num \n\t -- [TYPE] 'sensor' or 'test' for test structure, default is 'sensor'; \n\t -- [PATN] extra pattern in name 'Sensor_[PATN_]$SensorNum_v$version' \n\t -- [version] is optional: v2, v3 or default is v1 \n[Example]:\n\t ./cviv.exe 31 32 34 46 (sensor numbers provided)\n\t ./cviv.exe v2 33 42 (v2 stands for the version of 'inData/Sensor_xx_xV_2')\n");
   }
 
   /* Check which arg starting to be sensor_num: */
   int iarg = 1;
-  /* check the version from the first parameter */
-  if ( argv[1][0]=='P' && argv[1][1]=='A' && argv[1][2]=='T' && argv[1][3]=='N'){
-    extra_patn = argv[1];
-    extra_patn.erase(0,5);
-    iarg++;
-    if (printalot) std::cout<< extra_patn<<"\n";
-  }
-    
-  if ( argv[iarg][0]=='v' ){
-    meas_version=argv[iarg];
-    meas_version.erase(0,1);
-    iarg++; // sensor number starting from second parameter then
-    if (printalot)
-      std::cout<< "[Main:Info] You are checking measure version == " << meas_version <<std::endl;
-  }
   
-  
-  while(iarg<argc){  
-    if (std::stoi(argv[iarg])<31 || std::stoi(argv[iarg])>59) {
-      std::cout << "[Warning] non-sense input ==> " << argv[iarg] 
-		<< "\n\t must in range of [31, 59]!" << std::endl;
-      iarg++;
-      continue;
+  /* BEG-READ all OPTIONs */
+  int n = 0;
+  for ( int ii=1; ii<argc; ii++){
+    //    std::cout<< ii << " : " << argv[ii] << std::endl;
+
+    /* OPT-PATN */
+    if ( argv[ii][0]=='P' && argv[ii][1]=='A' && argv[ii][2]=='T' && argv[ii][3]=='N'){
+      extra_patn = argv[ii];
+      extra_patn.erase(0,5);
+      if (printalot) std::cout<< "[Main:Info] Checking special measurement == " << extra_patn<<"\n";
     }
-    std::cout << "check: " << iarg <<", "
-	      << argv[iarg] << std::endl;  
-    CVmeas(std::string(argv[iarg]), meas_version, extra_patn);
-    IVmeas(std::string(argv[iarg]), meas_version, extra_patn);
-    iarg++;
+    
+    /* OPT-TYPE */
+    else if ( argv[ii][0]=='T' && argv[ii][1]=='Y' && argv[ii][2]=='P' && argv[ii][3]=='E'){
+      data_type = argv[ii];
+      data_type.erase(0,5);
+      if (printalot) std::cout<< "[Main:Info] Checking data type == " << data_type<<"\n";
+    }
+
+    /* OPT-version */
+    else if ( argv[ii][0]=='v' ){
+      meas_version=argv[ii];
+      meas_version.erase(0,1);
+      if (printalot)
+	std::cout<< "[Main:Info] Checking measure version == " << meas_version <<std::endl;
+    }
+    
+    /* MUST-HAVE: sensor numbers*/
+    else if (std::isdigit(argv[ii][0])) {
+      if (std::stoi(argv[ii])<31 || std::stoi(argv[ii])>59) {
+	std::cout << "[Warning] non-sense input ==> " << argv[ii] 
+		  << "\n\t  must in range of [31, 59]!" << std::endl;
+	continue;
+      }
+      else
+	Snum_vec.push_back(argv[ii]);
+      
+    }
+
+    /* ERROR: strange input */
+    else {
+      throw std::runtime_error("\n ERROR: unable to read input option:"+std::string(argv[ii]));
+    }
+    
+  }
+  /* END-READ all OPTIONs */
+
+  if (data_type == "test") {
+    cviv_indir = "./inData_TS/";
+    cviv_type = "TestStructure";
+  }
+  cviv mycviv( cviv_indir, cviv_type, printalot);
+  
+  for (auto & Snum:Snum_vec){
+    std::cout << "[Main:Info] Check: " << Snum <<std::endl;  
+
+    mycviv.CVmeas(Snum, meas_version, extra_patn);
+    mycviv.IVmeas(Snum, meas_version, extra_patn);
   } 
   
   std::cout<<" ===  Done :) === \n"
@@ -397,3 +473,4 @@ int main(int argc, char* argv[]){
   
   return 1;
 }
+//----------DOC-MARK-----END*MAIN-----DOC-MARK----------
